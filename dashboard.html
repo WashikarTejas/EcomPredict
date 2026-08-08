@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce Sales Intelligence & Demand Forecasting Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --accent-blue: #38bdf8;
+            --accent-green: #34d399;
+            --accent-purple: #c084fc;
+            --accent-amber: #fbbf24;
+            --accent-rose: #f43f5e;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        body { background: var(--bg-dark); color: var(--text-main); min-height: 100vh; padding: 2rem; }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; }
+        .header h1 { font-size: 1.8rem; font-weight: 700; background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header p { color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem; }
+
+        .tabs { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; }
+        .tab-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: var(--text-muted); padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; }
+        .tab-btn:hover, .tab-btn.active { background: var(--accent-blue); color: #0f172a; font-weight: 600; border-color: var(--accent-blue); box-shadow: 0 0 15px rgba(56, 189, 248, 0.3); }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+        .kpi-card { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem; transition: transform 0.2s ease; }
+        .kpi-card:hover { transform: translateY(-3px); border-color: var(--accent-blue); }
+        .kpi-title { color: var(--text-muted); font-size: 0.85rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+        .kpi-value { font-size: 1.6rem; font-weight: 700; margin-top: 0.5rem; color: var(--text-main); }
+
+        .chart-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
+        .full-width { grid-column: span 2; }
+        .chart-card { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; }
+        .chart-card h3 { font-size: 1.1rem; margin-bottom: 1rem; color: var(--accent-blue); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; text-align: left; }
+        th, td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; }
+        th { color: var(--accent-blue); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; background: rgba(255, 255, 255, 0.02); }
+        tr:hover { background: rgba(255, 255, 255, 0.03); }
+
+        .badge { padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; display: inline-block; }
+        .badge-stockout { background: rgba(244, 63, 94, 0.2); color: var(--accent-rose); border: 1px solid var(--accent-rose); }
+        .badge-overstock { background: rgba(251, 191, 36, 0.2); color: var(--accent-amber); border: 1px solid var(--accent-amber); }
+        .badge-reorder { background: rgba(192, 132, 252, 0.2); color: var(--accent-purple); border: 1px solid var(--accent-purple); }
+        .badge-healthy { background: rgba(52, 211, 153, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+
+        @media (max-width: 900px) { .chart-grid { grid-template-columns: 1fr; } .full-width { grid-column: span 1; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>E-Commerce Sales Intelligence & Demand Forecasting Dashboard</h1>
+            <p>Live Business Analytics, Star Schema SQL Insights & Machine Learning Demand Predictions</p>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('exec')">Executive Overview</button>
+        <button class="tab-btn" onclick="switchTab('products')">Sales & Products</button>
+        <button class="tab-btn" onclick="switchTab('forecast')">Demand Forecasting & Inventory</button>
+    </div>
+
+    <!-- TAB 1: EXECUTIVE OVERVIEW -->
+    <div id="tab-exec" class="tab-content active">
+        <div class="kpi-grid">
+            <div class="kpi-card"><div class="kpi-title">Total Revenue</div><div class="kpi-value" style="color:var(--accent-blue);">$3,009,247.85</div></div>
+            <div class="kpi-card"><div class="kpi-title">Total Profit</div><div class="kpi-value" style="color:var(--accent-green);">$1,365,854.85</div></div>
+            <div class="kpi-card"><div class="kpi-title">Profit Margin</div><div class="kpi-value" style="color:var(--accent-purple);">45.39%</div></div>
+            <div class="kpi-card"><div class="kpi-title">Total Orders</div><div class="kpi-value">11,995</div></div>
+            <div class="kpi-card"><div class="kpi-title">Units Sold</div><div class="kpi-value">24,881</div></div>
+            <div class="kpi-card"><div class="kpi-title">Avg Order Value</div><div class="kpi-value">$250.88</div></div>
+        </div>
+
+        <div class="chart-grid">
+            <div class="chart-card full-width">
+                <h3>Monthly Revenue & Profit Growth Trends</h3>
+                <canvas id="monthlyChart" height="90"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>Revenue by Product Category</h3>
+                <canvas id="catChart" height="200"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>Regional Revenue Share</h3>
+                <canvas id="regionChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: SALES & PRODUCTS -->
+    <div id="tab-products" class="tab-content">
+        <div class="chart-grid">
+            <div class="chart-card full-width">
+                <h3>Top 10 Best Selling Products by Revenue</h3>
+                <canvas id="topProdChart" height="110"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: DEMAND FORECASTING & INVENTORY -->
+    <div id="tab-forecast" class="tab-content">
+        <div class="chart-grid">
+            <div class="chart-card full-width">
+                <h3>30-Day Time-Series Demand Forecast (Linear Regression Champion Model)</h3>
+                <canvas id="forecastChart" height="100"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <h3>Inventory Recommendations & Stockout Risk Engine</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th>Category</th>
+                        <th>Current Stock</th>
+                        <th>Forecast 30D Demand</th>
+                        <th>Demand Category</th>
+                        <th>Stock Status</th>
+                        <th>Action Recommendation</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryTable">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Monthly Chart
+        new Chart(document.getElementById('monthlyChart'), {
+            type: 'line',
+            data: {
+                labels: ["2023-01", "2023-02", "2023-03", "2023-04", "2023-05", "2023-06", "2023-07", "2023-08", "2023-09", "2023-10", "2023-11", "2023-12", "2024-01", "2024-02", "2024-03", "2024-04", "2024-05", "2024-06", "2024-07", "2024-08", "2024-09", "2024-10", "2024-11", "2024-12", "2025-01", "2025-02", "2025-03", "2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12"],
+                datasets: [
+                    { label: 'Revenue ($)', data: [67606.63, 59827.9, 76728.8, 62944.41, 73538.31, 96985.68, 101549.19, 104733.94, 88455.21, 105037.12, 94389.51, 117007.23, 66835.05, 60150.31, 70836.45, 73356.58, 73210.55, 70790.67, 97570.36, 87786.84, 82895.54, 72560.52, 108217.4, 90121.96, 66339.07, 65105.68, 88241.41, 103088.5, 74673.04, 72537.45, 94538.32, 85177.34, 80292.44, 82244.22, 95715.45, 98158.77], borderColor: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.1)', fill: true, tension: 0.3 },
+                    { label: 'Profit ($)', data: [30943.63, 26847.4, 35437.8, 29109.91, 33973.31, 42856.68, 45950.19, 47427.94, 39046.21, 47140.12, 42823.51, 52661.73, 30572.55, 27537.31, 33124.95, 34087.08, 33510.05, 33323.67, 44346.86, 39094.84, 37261.54, 32818.02, 48656.9, 41164.46, 29071.57, 30146.18, 40288.91, 46260.0, 33930.04, 33533.45, 42525.82, 39026.84, 35897.44, 37609.72, 43298.95, 44549.27], borderColor: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.1)', fill: true, tension: 0.3 }
+                ]
+            },
+            options: { responsive: true, plugins: { legend: { labels: { color: '#f8fafc' } } }, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } } }
+        });
+
+        // Category Chart
+        new Chart(document.getElementById('catChart'), {
+            type: 'bar',
+            data: {
+                labels: ["Apparel", "Electronics", "Furniture", "Home & Kitchen", "Office Supplies", "Unassigned"],
+                datasets: [{ label: 'Revenue ($)', data: [270745.53, 945413.55, 1122337.6, 453561.42, 215787.12, 1402.63], backgroundColor: '#c084fc' }]
+            },
+            options: { responsive: true, plugins: { legend: { labels: { color: '#f8fafc' } } }, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } } }
+        });
+
+        // Regional Chart
+        new Chart(document.getElementById('regionChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ["Central", "East", "North", "South", "Unassigned", "West"],
+                datasets: [{ data: [604168.39, 594780.84, 580757.52, 609970.48, 1540.18, 618030.44], backgroundColor: ['#38bdf8', '#34d399', '#c084fc', '#fbbf24', '#f43f5e'] }]
+            },
+            options: { responsive: true, plugins: { legend: { labels: { color: '#f8fafc' } } } }
+        });
+
+        // Top Products Chart
+        new Chart(document.getElementById('topProdChart'), {
+            type: 'bar',
+            data: {
+                labels: ["Ultra-Wide 4K Gaming Monitor", "Electric Standing Desk 55 inch", "Executive High-Back Chair", "Ergonomic Mesh Office Chair", "Robotic Vacuum Cleaner", "Bookshelf 5-Tier Industrial", "Wireless Noise-Canceling Headphones", "Smart Watch Fitness Tracker", "Performance Running Shoes", "Shredder Cross-Cut Heavy Duty"],
+                datasets: [{ label: 'Revenue ($)', data: [493509.8, 398189.05, 319388.31, 239294.37, 221546.68, 165691.95, 125574.56, 121630.09, 120530.82, 114759.75], backgroundColor: '#38bdf8' }]
+            },
+            options: { indexAxis: 'y', responsive: true, plugins: { legend: { labels: { color: '#f8fafc' } } }, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } } }
+        });
+
+        // Forecast Chart
+        new Chart(document.getElementById('forecastChart'), {
+            type: 'line',
+            data: {
+                labels: ["2025-11-02", "2025-11-03", "2025-11-04", "2025-11-05", "2025-11-06", "2025-11-07", "2025-11-08", "2025-11-09", "2025-11-10", "2025-11-11", "2025-11-12", "2025-11-13", "2025-11-14", "2025-11-15", "2025-11-16", "2025-11-17", "2025-11-18", "2025-11-19", "2025-11-20", "2025-11-21", "2025-11-22", "2025-11-23", "2025-11-24", "2025-11-25", "2025-11-26", "2025-11-27", "2025-11-28", "2025-11-29", "2025-11-30", "2025-12-01", "2025-12-02", "2025-12-03", "2025-12-04", "2025-12-05", "2025-12-06", "2025-12-07", "2025-12-08", "2025-12-09", "2025-12-10", "2025-12-11", "2025-12-12", "2025-12-13", "2025-12-14", "2025-12-15", "2025-12-16", "2025-12-17", "2025-12-18", "2025-12-19", "2025-12-20", "2025-12-21", "2025-12-22", "2025-12-23", "2025-12-24", "2025-12-25", "2025-12-26", "2025-12-27", "2025-12-28", "2025-12-29", "2025-12-30", "2025-12-31", "2026-01-01", "2026-01-02", "2026-01-03", "2026-01-04", "2026-01-05", "2026-01-06", "2026-01-07", "2026-01-08", "2026-01-09", "2026-01-10", "2026-01-11", "2026-01-12", "2026-01-13", "2026-01-14", "2026-01-15", "2026-01-16", "2026-01-17", "2026-01-18", "2026-01-19", "2026-01-20", "2026-01-21", "2026-01-22", "2026-01-23", "2026-01-24", "2026-01-25", "2026-01-26", "2026-01-27", "2026-01-28", "2026-01-29", "2026-01-30"],
+                datasets: [
+                    { label: 'Actual Demand', data: [28.0, 19.0, 38.0, 33.0, 33.0, 32.0, 30.0, 35.0, 15.0, 34.0, 18.0, 37.0, 25.0, 33.0, 10.0, 34.0, 24.0, 12.0, 21.0, 27.0, 15.0, 22.0, 24.0, 32.0, 29.0, 7.0, 38.0, 11.0, 28.0, 14.0, 15.0, 31.0, 28.0, 27.0, 35.0, 31.0, 31.0, 35.0, 42.0, 32.0, 36.0, 21.0, 27.0, 30.0, 17.0, 16.0, 23.0, 38.0, 29.0, 9.0, 30.0, 35.0, 20.0, 33.0, 22.0, 33.0, 37.0, 32.0, 47.0, 31.0, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null], borderColor: '#38bdf8', backgroundColor: '#38bdf8', pointRadius: 2 },
+                    { label: 'Predicted Demand (30D)', data: [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 27.33, 22.85, 21.3, 21.8, 22.69, 22.1, 22.05, 22.34, 21.45, 21.12, 21.04, 20.22, 21.49, 20.11, 19.9, 20.53, 20.55, 20.05, 19.02, 19.98, 21.05, 19.65, 19.13, 19.91, 19.04, 19.47, 19.41, 18.94, 19.11, 18.07], borderColor: '#34d399', borderDash: [5, 5], backgroundColor: '#34d399', pointRadius: 3 },
+                    { label: 'Upper Bound (95%)', data: [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 45.34, 40.86, 39.31, 39.81, 40.7, 40.11, 40.06, 40.35, 39.46, 39.13, 39.05, 38.23, 39.5, 38.12, 37.91, 38.54, 38.56, 38.06, 37.03, 37.99, 39.06, 37.66, 37.14, 37.92, 37.05, 37.48, 37.42, 36.95, 37.12, 36.08], borderColor: 'rgba(251, 191, 36, 0.4)', fill: '+1', backgroundColor: 'rgba(251, 191, 36, 0.1)', pointRadius: 0 },
+                    { label: 'Lower Bound (95%)', data: [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 9.32, 4.84, 3.29, 3.79, 4.68, 4.09, 4.04, 4.33, 3.44, 3.11, 3.03, 2.21, 3.48, 2.1, 1.89, 2.52, 2.54, 2.04, 1.01, 1.97, 3.04, 1.64, 1.12, 1.9, 1.03, 1.46, 1.4, 0.93, 1.1, 0.06], borderColor: 'rgba(251, 191, 36, 0.4)', fill: false, pointRadius: 0 }
+                ]
+            },
+            options: { responsive: true, plugins: { legend: { labels: { color: '#f8fafc' } } }, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } } }
+        });
+
+        // Populate Inventory Table
+        const recData = [{"product_id": "PROD-100", "product_name": "Wireless Noise-Canceling Headphones", "category": "Electronics", "current_stock": 374, "past_30d_demand": 42, "forecasted_30d_demand": 43, "demand_category": "LOW DEMAND", "stock_status": "POTENTIAL OVERSTOCK", "action_recommendation": "Halt immediate replenishment & consider promotional discount.", "explanation": "Current stock (374) is more than 2.5x projected 30-day demand (43). Excess inventory: 331 units."}, {"product_id": "PROD-101", "product_name": "Ultra-Wide 4K Gaming Monitor", "category": "Electronics", "current_stock": 678, "past_30d_demand": 31, "forecasted_30d_demand": 40, "demand_category": "INCREASING DEMAND", "stock_status": "POTENTIAL OVERSTOCK", "action_recommendation": "Halt immediate replenishment & consider promotional discount.", "explanation": "Current stock (678) is more than 2.5x projected 30-day demand (40). Excess inventory: 638 units."}, {"product_id": "PROD-102", "product_name": "Ergonomic Mechanical Keyboard", "category": "Electronics", "current_stock": 704, "past_30d_demand": 48, "forecasted_30d_demand": 57, "demand_category": "INCREASING DEMAND", "stock_status": "POTENTIAL OVERSTOCK", "action_recommendation": "Halt immediate replenishment & consider promotional discount.", "explanation": "Current stock (704) is more than 2.5x projected 30-day demand (57). Excess inventory: 647 units."}, {"product_id": "PROD-103", "product_name": "High-Speed USB-C Hub 8-in-1", "category": "Electronics", "current_stock": 786, "past_30d_demand": 33, "forecasted_30d_demand": 37, "demand_category": "LOW DEMAND", "stock_status": "POTENTIAL OVERSTOCK", "action_recommendation": "Halt immediate replenishment & consider promotional discount.", "explanation": "Current stock (786) is more than 2.5x projected 30-day demand (37). Excess inventory: 749 units."}, {"product_id": "PROD-104", "product_name": "Portable Bluetooth Speaker", "category": "Electronics", "current_stock": 214, "past_30d_demand": 33, "forecasted_30d_demand": 30, "demand_category": "LOW DEMAND", "stock_status": "REORDER RECOMMENDED", "action_recommendation": "Place purchase order within 6 days to maintain buffer stock.", "explanation": "Stock level (214) has reached or dropped below reorder point (215)."}, {"product_id": "PROD-105", "product_name": "Smart Watch Fitness Tracker", "category": "Electronics", "current_stock": 143, "past_30d_demand": 51, "forecasted_30d_demand": 47, "demand_category": "STABLE DEMAND", "stock_status": "REORDER RECOMMENDED", "action_recommendation": "Place purchase order within 8 days to maintain buffer stock.", "explanation": "Stock level (143) has reached or dropped below reorder point (161)."}, {"product_id": "PROD-106", "product_name": "Premium Leather Journal", "category": "Office Supplies", "current_stock": 426, "past_30d_demand": 42, "forecasted_30d_demand": 37, "demand_category": "DECLINING DEMAND", "stock_status": "POTENTIAL OVERSTOCK", "action_recommendation": "Halt immediate replenishment & consider promotional discount.", "explanation": "Current stock (426) is more than 2.5x projected 30-day demand (37). Excess inventory: 389 units."}, {"product_id": "PROD-107", "product_name": "Gel Pen Set 12-Pack", "category": "Office Supplies", "current_stock": 397, "past_30d_demand": 55, "forecasted_30d_demand": 68, "demand_category": "INCREASING DEMAND", "stock_status": "POTENTIAL OVERSTOCK", "action_recommendation": "Halt immediate replenishment & consider promotional discount.", "explanation": "Current stock (397) is more than 2.5x projected 30-day demand (68). Excess inventory: 329 units."}, {"product_id": "PROD-108", "product_name": "Adjustable Laptop Stand", "category": "Office Supplies", "current_stock": 762, "past_30d_demand": 54, "forecasted_30d_demand": 60, "demand_category": "STABLE DEMAND", "stock_status": "POTENTIAL OVERSTOCK", "action_recommendation": "Halt immediate replenishment & consider promotional discount.", "explanation": "Current stock (762) is more than 2.5x projected 30-day demand (60). Excess inventory: 702 units."}, {"product_id": "PROD-109", "product_name": "Shredder Cross-Cut Heavy Duty", "category": "Office Supplies", "current_stock": 395, "past_30d_demand": 23, "forecasted_30d_demand": 27, "demand_category": "INCREASING DEMAND", "stock_status": "POTENTIAL OVERSTOCK", "action_recommendation": "Halt immediate replenishment & consider promotional discount.", "explanation": "Current stock (395) is more than 2.5x projected 30-day demand (27). Excess inventory: 368 units."}, {"product_id": "PROD-110", "product_name": "Desk Organizer Mesh Drawer", "category": "Office Supplies", "current_stock": 668, "past_30d_demand": 29, "forecasted_30d_demand": 25, "demand_category": "DECLINING DEMAND", "stock_status": "POTENTIAL OVERSTOCK", "action_recommendation": "Halt immediate replenishment & consider promotional discount.", "explanation": "Current stock (668) is more than 2.5x projected 30-day demand (25). Excess inventory: 643 units."}, {"product_id": "PROD-111", "product_name": "Ergonomic Mesh Office Chair", "category": "Furniture", "current_stock": 690, "past_30d_demand": 53, "forecasted_30d_demand": 68, "demand_category": "INCREASING DEMAND", "stock_status": "POTENTIAL OVERSTOCK", "action_recommendation": "Halt immediate replenishment & consider promotional discount.", "explanation": "Current stock (690) is more than 2.5x projected 30-day demand (68). Excess inventory: 622 units."}, {"product_id": "PROD-112", "product_name": "Electric Standing Desk 55 inch", "category": "Furniture", "current_stock": 379, "past_30d_demand": 34, "forecasted_30d_demand": 41, "demand_category": "INCREASING DEMAND", "stock_status": "POTENTIAL OVERSTOCK", "action_recommendation": "Halt immediate replenishment & consider promotional discount.", "explanation": "Current stock (379) is more than 2.5x projected 30-day demand (41). Excess inventory: 338 units."}, {"product_id": "PROD-113", "product_name": "Bookshelf 5-Tier Industrial", "category": "Furniture", "current_stock": 155, "past_30d_demand": 28, "forecasted_30d_demand": 27, "demand_category": "LOW DEMAND", "stock_status": "REORDER RECOMMENDED", "action_recommendation": "Place purchase order within 8 days to maintain buffer stock.", "explanation": "Stock level (155) has reached or dropped below reorder point (179)."}, {"product_id": "PROD-114", "product_name": "Executive High-Back Chair", "category": "Furniture", "current_stock": 533, "past_30d_demand": 34, "forecasted_30d_demand": 32, "demand_category": "LOW DEMAND", "stock_status": "POTENTIAL OVERSTOCK", "action_recommendation": "Halt immediate replenishment & consider promotional discount.", "explanation": "Current stock (533) is more than 2.5x projected 30-day demand (32). Excess inventory: 501 units."}, {"product_id": "PROD-115", "product_name": "Waterproof Breathable Rain Jacket", "category": "Apparel", "current_stock": 424, "past_30d_demand": 19, "forecasted_30d_demand": 18, "demand_category": "LOW DEMAND", "stock_status": "POTENTIAL OVERSTOCK", "action_recommendation": "Halt immediate replenishment & consider promotional discount.", "explanation": "Current stock (424) is more than 2.5x projected 30-day demand (18). Excess inventory: 406 units."}, {"product_id": "PROD-116", "product_name": "Cotton Pullover Hoodie", "category": "Apparel", "current_stock": 635, "past_30d_demand": 45, "forecasted_30d_demand": 45, "demand_category": "LOW DEMAND", "stock_status": "POTENTIAL OVERSTOCK", "action_recommendation": "Halt immediate replenishment & consider promotional discount.", "explanation": "Current stock (635) is more than 2.5x projected 30-day demand (45). Excess inventory: 590 units."}, {"product_id": "PROD-117", "product_name": "Performance Running Shoes", "category": "Apparel", "current_stock": 461, "past_30d_demand": 32, "forecasted_30d_demand": 35, "demand_category": "LOW DEMAND", "stock_status": "POTENTIAL OVERSTOCK", "action_recommendation": "Halt immediate replenishment & consider promotional discount.", "explanation": "Current stock (461) is more than 2.5x projected 30-day demand (35). Excess inventory: 426 units."}, {"product_id": "PROD-118", "product_name": "Merino Wool Thermal Socks 3-Pack", "category": "Apparel", "current_stock": 197, "past_30d_demand": 55, "forecasted_30d_demand": 57, "demand_category": "STABLE DEMAND", "stock_status": "POTENTIAL OVERSTOCK", "action_recommendation": "Halt immediate replenishment & consider promotional discount.", "explanation": "Current stock (197) is more than 2.5x projected 30-day demand (57). Excess inventory: 140 units."}, {"product_id": "PROD-119", "product_name": "Stainless Steel French Press", "category": "Home & Kitchen", "current_stock": 295, "past_30d_demand": 50, "forecasted_30d_demand": 49, "demand_category": "STABLE DEMAND", "stock_status": "POTENTIAL OVERSTOCK", "action_recommendation": "Halt immediate replenishment & consider promotional discount.", "explanation": "Current stock (295) is more than 2.5x projected 30-day demand (49). Excess inventory: 246 units."}, {"product_id": "PROD-120", "product_name": "Air Fryer XL 5.8 Quart", "category": "Home & Kitchen", "current_stock": 465, "past_30d_demand": 38, "forecasted_30d_demand": 43, "demand_category": "LOW DEMAND", "stock_status": "POTENTIAL OVERSTOCK", "action_recommendation": "Halt immediate replenishment & consider promotional discount.", "explanation": "Current stock (465) is more than 2.5x projected 30-day demand (43). Excess inventory: 422 units."}, {"product_id": "PROD-121", "product_name": "Cast Iron Dutch Oven 6 Qt", "category": "Home & Kitchen", "current_stock": 577, "past_30d_demand": 29, "forecasted_30d_demand": 26, "demand_category": "LOW DEMAND", "stock_status": "POTENTIAL OVERSTOCK", "action_recommendation": "Halt immediate replenishment & consider promotional discount.", "explanation": "Current stock (577) is more than 2.5x projected 30-day demand (26). Excess inventory: 551 units."}, {"product_id": "PROD-122", "product_name": "Robotic Vacuum Cleaner", "category": "Home & Kitchen", "current_stock": 694, "past_30d_demand": 15, "forecasted_30d_demand": 15, "demand_category": "LOW DEMAND", "stock_status": "POTENTIAL OVERSTOCK", "action_recommendation": "Halt immediate replenishment & consider promotional discount.", "explanation": "Current stock (694) is more than 2.5x projected 30-day demand (15). Excess inventory: 679 units."}];
+        const tbody = document.getElementById('inventoryTable');
+        recData.forEach(row => {
+            let badgeClass = 'badge-healthy';
+            if (row.stock_status.includes('STOCKOUT')) badgeClass = 'badge-stockout';
+            else if (row.stock_status.includes('OVERSTOCK')) badgeClass = 'badge-overstock';
+            else if (row.stock_status.includes('REORDER')) badgeClass = 'badge-reorder';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${row.product_name}</strong></td>
+                <td>${row.category}</td>
+                <td>${row.current_stock}</td>
+                <td>${row.forecasted_30d_demand}</td>
+                <td>${row.demand_category}</td>
+                <td><span class="badge ${badgeClass}">${row.stock_status}</span></td>
+                <td>${row.action_recommendation}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    </script>
+</body>
+</html>
