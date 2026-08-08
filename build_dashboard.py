@@ -1,13 +1,13 @@
 """
 Builds an ultra-premium, 4-view interactive web BI dashboard (dashboard.html) matching the
-exact "Purse" reference UI design (Light/Dark themes, glassmorphism card, time pills, sidebar,
-purple wave charts, donut ring, category spent list, and full 4-page Power BI visual views).
+reference UI design with official project branding:
+"E-Commerce Sales Intelligence & Demand Forecasting Platform".
 """
 
 import json
 import pandas as pd
 
-def generate_complete_purse_dashboard():
+def generate_complete_dashboard():
     # Load Processed Datasets
     cleaned_df = pd.read_csv("data/processed/cleaned_sales.csv")
     forecast_df = pd.read_csv("exports/forecast_results.csv")
@@ -82,7 +82,7 @@ def generate_complete_purse_dashboard():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Commerce Sales Intelligence & Demand Forecasting</title>
+    <title>E-Commerce Sales Intelligence & Demand Forecasting Platform</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -133,7 +133,7 @@ def generate_complete_purse_dashboard():
 
         /* Header / Top Bar */
         .top-header {{ display: flex; justify-content: space-between; align-items: center; width: 100%; }}
-        .brand-title {{ font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; color: var(--text-main); }}
+        .brand-title {{ font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; color: var(--text-main); }}
         
         .nav-views {{ display: flex; background: var(--card-bg); border: 1px solid var(--border-color); padding: 4px; border-radius: 30px; gap: 4px; box-shadow: var(--shadow-card); }}
         .view-pill {{ padding: 8px 20px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); cursor: pointer; border: none; background: transparent; transition: all 0.2s ease; }}
@@ -217,7 +217,7 @@ def generate_complete_purse_dashboard():
 
     <!-- Left Sidebar Navigation -->
     <div class="sidebar">
-        <div class="sidebar-logo">P</div>
+        <div class="sidebar-logo">E</div>
         <div class="nav-icons">
             <div class="nav-item active" onclick="switchView('exec')" title="Executive Overview">⚡</div>
             <div class="nav-item" onclick="switchView('products')" title="Sales & Products">📦</div>
@@ -231,7 +231,7 @@ def generate_complete_purse_dashboard():
         
         <!-- Header Bar -->
         <div class="top-header">
-            <div class="brand-title">Purse Analytics</div>
+            <div class="brand-title">E-Commerce Sales Intelligence & Demand Forecasting Platform</div>
             
             <!-- Views Navigation Pills -->
             <div class="nav-views">
@@ -260,7 +260,7 @@ def generate_complete_purse_dashboard():
                         <!-- Glassmorphic Card -->
                         <div class="glass-card">
                             <div class="card-top">
-                                <span style="font-weight: 700; font-size: 1rem;">VISA Executive</span>
+                                <span style="font-weight: 700; font-size: 1rem;">E-Commerce Executive</span>
                                 <div class="card-chip"></div>
                             </div>
                             <div class="card-number">•••• •••• 8702</div>
@@ -608,7 +608,7 @@ def generate_complete_purse_dashboard():
 
     with open("dashboard.html", "w", encoding="utf-8") as f:
         f.write(html_content)
-    print("Successfully built 4-view Purse Dashboard at D:\\E-commerce\\dashboard.html")
+    print("Successfully built updated Dashboard at D:\\E-commerce\\dashboard.html")
 
 if __name__ == "__main__":
-    generate_complete_purse_dashboard()
+    generate_complete_dashboard()
