@@ -1,34 +1,60 @@
 """
-Generates a state-of-the-art interactive BI Dashboard (dashboard.html) matching the exact
-"Purse" modern UI layout, with Light & Dark themes, glassmorphism cards, time range pills,
-smooth gradient wave charts, category breakdown sidebar, and inventory risk tables.
+Builds an ultra-premium, 4-view interactive web BI dashboard (dashboard.html) matching the
+exact "Purse" reference UI design (Light/Dark themes, glassmorphism card, time pills, sidebar,
+purple wave charts, donut ring, category spent list, and full 4-page Power BI visual views).
 """
 
 import json
 import pandas as pd
 
-def generate_designer_dashboard():
-    # Load Processed Data
+def generate_complete_purse_dashboard():
+    # Load Processed Datasets
     cleaned_df = pd.read_csv("data/processed/cleaned_sales.csv")
     forecast_df = pd.read_csv("exports/forecast_results.csv")
     rec_df = pd.read_csv("exports/inventory_recommendations.csv")
 
-    # Aggregate Monthly
     cleaned_df["order_date"] = pd.to_datetime(cleaned_df["order_date"])
     cleaned_df["year_month"] = cleaned_df["order_date"].dt.to_period("M").astype(str)
-    
+
+    # --- Page 1: Executive Aggregations ---
     monthly = cleaned_df.groupby("year_month")[["sales", "profit"]].sum().reset_index()
     monthly_labels = monthly["year_month"].tolist()
     monthly_sales = monthly["sales"].round(2).tolist()
     monthly_profit = monthly["profit"].round(2).tolist()
 
-    # Aggregate Category
-    cat_df = cleaned_df.groupby("category")[["sales", "profit"]].sum().reset_index().sort_values(by="sales", ascending=False)
+    cat_df = cleaned_df.groupby("category")[["sales", "profit", "quantity"]].sum().reset_index().sort_values(by="sales", ascending=False)
     cat_labels = cat_df["category"].tolist()
     cat_sales = cat_df["sales"].round(2).tolist()
     cat_profit = cat_df["profit"].round(2).tolist()
 
-    # Forecast Data
+    reg_df = cleaned_df.groupby("region")[["sales", "profit"]].sum().reset_index().sort_values(by="sales", ascending=False)
+    reg_labels = reg_df["region"].tolist()
+    reg_sales = reg_df["sales"].round(2).tolist()
+    reg_profit = reg_df["profit"].round(2).tolist()
+
+    # --- Page 2: Product & Category Aggregations ---
+    prod_summary = cleaned_df.groupby(["product_id", "product_name", "category"]).agg(
+        total_units=("quantity", "sum"),
+        total_revenue=("sales", "sum"),
+        total_profit=("profit", "sum")
+    ).reset_index()
+    prod_summary["total_revenue"] = prod_summary["total_revenue"].round(2)
+    prod_summary["total_profit"] = prod_summary["total_profit"].round(2)
+
+    top_10_prods = prod_summary.sort_values(by="total_revenue", ascending=False).head(10).to_dict(orient="records")
+    bottom_10_prods = prod_summary.sort_values(by="total_revenue", ascending=True).head(10).to_dict(orient="records")
+
+    # --- Page 3: Customer & Regional Aggregations ---
+    cust_summary = cleaned_df.groupby("customer_id").agg(
+        total_orders=("order_id", "nunique"),
+        total_items=("quantity", "sum"),
+        total_spend=("sales", "sum"),
+        total_profit=("profit", "sum")
+    ).reset_index().sort_values(by="total_spend", ascending=False)
+    cust_summary["total_spend"] = cust_summary["total_spend"].round(2)
+    top_10_custs = cust_summary.head(10).to_dict(orient="records")
+
+    # --- Page 4: Demand Forecasting & Inventory ---
     forecast_df["order_date"] = pd.to_datetime(forecast_df["order_date"])
     recent_hist = forecast_df[forecast_df["is_forecast"] == 0].tail(30)
     future_fcst = forecast_df[forecast_df["is_forecast"] == 1]
@@ -36,11 +62,10 @@ def generate_designer_dashboard():
     fcst_dates = recent_hist["order_date"].dt.strftime("%b %d").tolist() + future_fcst["order_date"].dt.strftime("%b %d").tolist()
     actual_demand = recent_hist["actual_demand"].tolist() + [None]*len(future_fcst)
     pred_demand = [None]*len(recent_hist) + future_fcst["predicted_demand"].tolist()
+    lower_bound = [None]*len(recent_hist) + future_fcst["lower_bound"].tolist()
+    upper_bound = [None]*len(recent_hist) + future_fcst["upper_bound"].tolist()
 
-    # Top Recent Transactions
-    recent_tx = cleaned_df.sort_values(by="order_date", ascending=False).head(5).to_dict(orient="records")
-
-    # KPIs
+    # Overall KPIs
     tot_rev = float(cleaned_df["sales"].sum())
     tot_prof = float(cleaned_df["profit"].sum())
     tot_orders = int(cleaned_df["order_id"].nunique())
@@ -48,6 +73,8 @@ def generate_designer_dashboard():
     aov = float(tot_rev / tot_orders)
     margin = float(tot_prof / tot_rev * 100)
 
+    # Recent Transactions
+    recent_tx = cleaned_df.sort_values(by="order_date", ascending=False).head(5).to_dict(orient="records")
     recs = rec_df.to_dict(orient="records")
 
     html_content = f"""<!DOCTYPE html>
@@ -68,14 +95,14 @@ def generate_designer_dashboard():
             --text-main: #ffffff;
             --text-muted: #8a8f9d;
             --primary-orange: #ff6b35;
-            --primary-orange-hover: #ff8555;
             --accent-purple: #9d4edd;
             --accent-purple-light: #c084fc;
             --accent-pink: #f72585;
             --accent-green: #10b981;
             --accent-blue: #3b82f6;
+            --accent-amber: #fbbf24;
             --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.3);
-            --glass-card: linear-gradient(135deg, rgba(168, 85, 247, 0.75), rgba(249, 115, 22, 0.75));
+            --glass-card: linear-gradient(135deg, rgba(168, 85, 247, 0.8), rgba(249, 115, 22, 0.8));
         }}
 
         [data-theme="light"] {{
@@ -88,7 +115,7 @@ def generate_designer_dashboard():
             --text-muted: #6b7280;
             --primary-orange: #ff6b35;
             --shadow-card: 0 10px 25px rgba(0, 0, 0, 0.04);
-            --glass-card: linear-gradient(135deg, rgba(168, 85, 247, 0.85), rgba(249, 115, 22, 0.85));
+            --glass-card: linear-gradient(135deg, rgba(168, 85, 247, 0.9), rgba(249, 115, 22, 0.9));
         }}
 
         * {{ margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s ease, color 0.3s ease; }}
@@ -96,9 +123,9 @@ def generate_designer_dashboard():
 
         /* Left Navigation Bar */
         .sidebar {{ width: 80px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; padding: 2rem 0; gap: 2rem; z-index: 10; }}
-        .sidebar-logo {{ width: 42px; height: 42px; background: var(--primary-orange); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.3rem; color: #fff; box-shadow: 0 0 20px rgba(255, 107, 53, 0.4); }}
+        .sidebar-logo {{ width: 44px; height: 44px; background: var(--primary-orange); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.4rem; color: #fff; box-shadow: 0 0 20px rgba(255, 107, 53, 0.4); }}
         .nav-icons {{ display: flex; flex-direction: column; gap: 1.5rem; width: 100%; align-items: center; margin-top: 1rem; }}
-        .nav-item {{ width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; transition: all 0.2s ease; }}
+        .nav-item {{ width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; transition: all 0.2s ease; font-size: 1.2rem; }}
         .nav-item:hover, .nav-item.active {{ background: rgba(255, 107, 53, 0.15); color: var(--primary-orange); }}
 
         /* Main Workspace */
@@ -108,14 +135,18 @@ def generate_designer_dashboard():
         .top-header {{ display: flex; justify-content: space-between; align-items: center; width: 100%; }}
         .brand-title {{ font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; color: var(--text-main); }}
         
-        .time-pills {{ display: flex; background: var(--card-bg); border: 1px solid var(--border-color); padding: 4px; border-radius: 30px; gap: 4px; box-shadow: var(--shadow-card); }}
-        .pill {{ padding: 8px 22px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); cursor: pointer; border: none; background: transparent; transition: all 0.2s ease; }}
-        .pill.active {{ background: var(--primary-orange); color: #ffffff; box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4); }}
+        .nav-views {{ display: flex; background: var(--card-bg); border: 1px solid var(--border-color); padding: 4px; border-radius: 30px; gap: 4px; box-shadow: var(--shadow-card); }}
+        .view-pill {{ padding: 8px 20px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); cursor: pointer; border: none; background: transparent; transition: all 0.2s ease; }}
+        .view-pill.active {{ background: var(--primary-orange); color: #ffffff; box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4); }}
 
         .header-actions {{ display: flex; align-items: center; gap: 1.25rem; }}
         .theme-toggle-btn {{ background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow-card); }}
         .user-avatar {{ display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 0.9rem; cursor: pointer; }}
         .user-avatar img {{ width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-orange); }}
+
+        /* Views Container */
+        .view-content {{ display: none; width: 100%; }}
+        .view-content.active {{ display: block; }}
 
         /* Dashboard Grid Layout */
         .dashboard-grid {{ display: grid; grid-template-columns: 2.2fr 1fr; gap: 2rem; width: 100%; }}
@@ -188,12 +219,10 @@ def generate_designer_dashboard():
     <div class="sidebar">
         <div class="sidebar-logo">P</div>
         <div class="nav-icons">
-            <div class="nav-item active" title="Dashboard">⚡</div>
-            <div class="nav-item" title="Analytics">📈</div>
-            <div class="nav-item" title="Transactions">💳</div>
-            <div class="nav-item" title="Inventory">📦</div>
-            <div class="nav-item" title="Forecasting">🎯</div>
-            <div class="nav-item" title="Settings">⚙️</div>
+            <div class="nav-item active" onclick="switchView('exec')" title="Executive Overview">⚡</div>
+            <div class="nav-item" onclick="switchView('products')" title="Sales & Products">📦</div>
+            <div class="nav-item" onclick="switchView('customers')" title="Customers & Regions">👥</div>
+            <div class="nav-item" onclick="switchView('forecast')" title="Demand Forecasting">🎯</div>
         </div>
     </div>
 
@@ -204,12 +233,12 @@ def generate_designer_dashboard():
         <div class="top-header">
             <div class="brand-title">Purse Analytics</div>
             
-            <!-- Time Period Pills -->
-            <div class="time-pills">
-                <button class="pill">Day</button>
-                <button class="pill active">Week</button>
-                <button class="pill">Month</button>
-                <button class="pill">Year</button>
+            <!-- Views Navigation Pills -->
+            <div class="nav-views">
+                <button class="view-pill active" onclick="switchView('exec')">Executive Overview</button>
+                <button class="view-pill" onclick="switchView('products')">Sales & Products</button>
+                <button class="view-pill" onclick="switchView('customers')">Customers & Regions</button>
+                <button class="view-pill" onclick="switchView('forecast')">Demand Forecasting</button>
             </div>
 
             <div class="header-actions">
@@ -223,179 +252,250 @@ def generate_designer_dashboard():
             </div>
         </div>
 
-        <!-- Dashboard Grid Layout -->
-        <div class="dashboard-grid">
-            
-            <!-- Left Main Panel -->
-            <div class="left-panel">
-                
-                <!-- Top Row: Glass Card + Recent Activity -->
-                <div class="top-cards-row">
-                    <!-- Glassmorphic Card -->
-                    <div class="glass-card">
-                        <div class="card-top">
-                            <span style="font-weight: 700; font-size: 1rem;">VISA Executive</span>
-                            <div class="card-chip"></div>
+        <!-- PAGE 1: EXECUTIVE OVERVIEW -->
+        <div id="view-exec" class="view-content active">
+            <div class="dashboard-grid">
+                <div class="left-panel">
+                    <div class="top-cards-row">
+                        <!-- Glassmorphic Card -->
+                        <div class="glass-card">
+                            <div class="card-top">
+                                <span style="font-weight: 700; font-size: 1rem;">VISA Executive</span>
+                                <div class="card-chip"></div>
+                            </div>
+                            <div class="card-number">•••• •••• 8702</div>
+                            <div class="card-bottom">
+                                <div>
+                                    <div class="card-label">Total Revenue</div>
+                                    <div class="card-val">${tot_rev:,.2f}</div>
+                                </div>
+                                <div>
+                                    <div class="card-label">Profit Margin</div>
+                                    <div class="card-val">{margin:.1f}%</div>
+                                </div>
+                                <div style="font-weight: 800; font-size: 1.3rem;">VISA</div>
+                            </div>
                         </div>
-                        <div class="card-number">•••• •••• 8702</div>
-                        <div class="card-bottom">
-                            <div>
-                                <div class="card-label">Net Sales Revenue</div>
-                                <div class="card-val">${tot_rev:,.2f}</div>
+
+                        <!-- Recent Sales Activity -->
+                        <div class="widget-card">
+                            <div class="widget-header">
+                                <div class="widget-title">Recent Transactions</div>
+                                <div class="widget-sub">Live Orders</div>
                             </div>
-                            <div>
-                                <div class="card-label">Profit Margin</div>
-                                <div class="card-val">{margin:.1f}%</div>
+                            <div class="tx-list">
+                                <div class="tx-item">
+                                    <div class="tx-left">
+                                        <div class="tx-icon">🎧</div>
+                                        <div>
+                                            <div class="tx-name">Wireless Headphones</div>
+                                            <div class="tx-date">ORD-11995 • Electronics</div>
+                                        </div>
+                                    </div>
+                                    <div class="tx-amount">+$149.99</div>
+                                </div>
+                                <div class="tx-item">
+                                    <div class="tx-left">
+                                        <div class="tx-icon">🖥️</div>
+                                        <div>
+                                            <div class="tx-name">4K Gaming Monitor</div>
+                                            <div class="tx-date">ORD-11994 • Electronics</div>
+                                        </div>
+                                    </div>
+                                    <div class="tx-amount">+$499.99</div>
+                                </div>
+                                <div class="tx-item">
+                                    <div class="tx-left">
+                                        <div class="tx-icon">🪑</div>
+                                        <div>
+                                            <div class="tx-name">Mesh Office Chair</div>
+                                            <div class="tx-date">ORD-11993 • Furniture</div>
+                                        </div>
+                                    </div>
+                                    <div class="tx-amount">+$229.99</div>
+                                </div>
                             </div>
-                            <div style="font-weight: 800; font-size: 1.3rem;">VISA</div>
                         </div>
                     </div>
 
-                    <!-- Recent Sales Activity -->
-                    <div class="widget-card">
-                        <div class="widget-header">
-                            <div class="widget-title">Recent Transactions</div>
-                            <div class="widget-sub">Live Orders</div>
+                    <div class="bottom-charts-row">
+                        <!-- Activity Smooth Wave Chart -->
+                        <div class="widget-card">
+                            <div class="widget-header">
+                                <div class="widget-title">Monthly Growth Activity</div>
+                                <div class="widget-sub">Revenue & Profit Trend</div>
+                            </div>
+                            <div style="height: 180px;">
+                                <canvas id="activityChart"></canvas>
+                            </div>
                         </div>
-                        <div class="tx-list">
-                            <div class="tx-item">
-                                <div class="tx-left">
-                                    <div class="tx-icon">🎧</div>
-                                    <div>
-                                        <div class="tx-name">Wireless Headphones</div>
-                                        <div class="tx-date">ORD-11995 • Electronics</div>
-                                    </div>
-                                </div>
-                                <div class="tx-amount">+$149.99</div>
+
+                        <!-- Payments Bar Chart -->
+                        <div class="widget-card">
+                            <div class="widget-header">
+                                <div class="widget-title">Category Revenue Performance</div>
+                                <div class="widget-sub">Sales Distribution</div>
                             </div>
-                            <div class="tx-item">
-                                <div class="tx-left">
-                                    <div class="tx-icon">🖥️</div>
-                                    <div>
-                                        <div class="tx-name">4K Gaming Monitor</div>
-                                        <div class="tx-date">ORD-11994 • Electronics</div>
-                                    </div>
-                                </div>
-                                <div class="tx-amount">+$499.99</div>
-                            </div>
-                            <div class="tx-item">
-                                <div class="tx-left">
-                                    <div class="tx-icon">🪑</div>
-                                    <div>
-                                        <div class="tx-name">Mesh Office Chair</div>
-                                        <div class="tx-date">ORD-11993 • Furniture</div>
-                                    </div>
-                                </div>
-                                <div class="tx-amount">+$229.99</div>
+                            <div style="height: 180px;">
+                                <canvas id="paymentsChart"></canvas>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Bottom Row: Activity Line Wave + Payments Bar Chart -->
-                <div class="bottom-charts-row">
-                    <!-- Activity Smooth Wave Chart -->
-                    <div class="widget-card">
-                        <div class="widget-header">
-                            <div class="widget-title">Revenue Growth Activity</div>
-                            <div class="widget-sub">Monthly Trend</div>
+                <!-- Right Side Panel -->
+                <div class="right-panel">
+                    <div class="widget-card" style="align-items: center; text-align: center;">
+                        <div class="progress-circle-box" style="width: 170px; height: 170px;">
+                            <canvas id="donutRingChart"></canvas>
+                            <div style="position: absolute; text-align: center;">
+                                <div style="font-size: 1.8rem; font-weight: 800; color: var(--text-main);">{margin:.0f}%</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Profit Margin</div>
+                            </div>
                         </div>
-                        <div style="height: 180px;">
-                            <canvas id="activityChart"></canvas>
-                        </div>
-                    </div>
 
-                    <!-- Payments Bar Chart -->
-                    <div class="widget-card">
-                        <div class="widget-header">
-                            <div class="widget-title">Category Revenue Breakdown</div>
-                            <div class="widget-sub">Sales Performance</div>
+                        <div class="balance-box">
+                            <div class="balance-amount">${tot_rev:,.2f}</div>
+                            <div class="balance-label">Total Generated Revenue</div>
                         </div>
-                        <div style="height: 180px;">
-                            <canvas id="paymentsChart"></canvas>
+
+                        <hr style="width: 100%; border: none; border-top: 1px solid var(--border-color); margin: 1rem 0;">
+
+                        <div style="width: 100%;">
+                            <div style="text-align: left; font-size: 0.95rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-main);">Category Revenue</div>
+                            <div class="cat-list">
+                                <div class="cat-row"><div class="cat-left"><div class="cat-dot" style="background: #9d4edd;"></div> Furniture</div><div>${cat_sales[0]:,.2f}</div></div>
+                                <div class="cat-row"><div class="cat-left"><div class="cat-dot" style="background: #3b82f6;"></div> Electronics</div><div>${cat_sales[1]:,.2f}</div></div>
+                                <div class="cat-row"><div class="cat-left"><div class="cat-dot" style="background: #ff6b35;"></div> Home & Kitchen</div><div>${cat_sales[2]:,.2f}</div></div>
+                                <div class="cat-row"><div class="cat-left"><div class="cat-dot" style="background: #10b981;"></div> Apparel</div><div>${cat_sales[3]:,.2f}</div></div>
+                                <div class="cat-row"><div class="cat-left"><div class="cat-dot" style="background: #f72585;"></div> Office Supplies</div><div>${cat_sales[4]:,.2f}</div></div>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <!-- Demand Forecasting & Inventory Engine Table -->
+        <!-- PAGE 2: SALES & PRODUCT ANALYTICS -->
+        <div id="view-products" class="view-content">
+            <div class="widget-card" style="margin-bottom: 2rem;">
+                <div class="widget-header">
+                    <div class="widget-title">Top 10 Best-Selling Products</div>
+                    <div class="widget-sub">Revenue Drivers</div>
+                </div>
+                <div style="height: 250px;">
+                    <canvas id="topProdChart"></canvas>
+                </div>
+            </div>
+
+            <div class="widget-card">
+                <div class="widget-header">
+                    <div class="widget-title">Bottom 10 Performing Products</div>
+                    <div class="widget-sub">Underperforming SKUs</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product ID</th>
+                            <th>Product Name</th>
+                            <th>Category</th>
+                            <th>Units Sold</th>
+                            <th>Revenue ($)</th>
+                            <th>Profit ($)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {"".join([f"<tr><td>{row['product_id']}</td><td><strong>{row['product_name']}</strong></td><td>{row['category']}</td><td>{row['total_units']}</td><td>${row['total_revenue']:,.2f}</td><td>${row['total_profit']:,.2f}</td></tr>" for row in bottom_10_prods])}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PAGE 3: CUSTOMER & REGIONAL ANALYTICS -->
+        <div id="view-customers" class="view-content">
+            <div class="bottom-charts-row" style="margin-bottom: 2rem;">
                 <div class="widget-card">
                     <div class="widget-header">
-                        <div class="widget-title">ML Demand Forecast & Inventory Stockout Engine</div>
-                        <div class="widget-sub">30-Day Predictive Actions</div>
+                        <div class="widget-title">Regional Revenue Share</div>
+                        <div class="widget-sub">Geographic Breakdown</div>
+                    </div>
+                    <div style="height: 220px;">
+                        <canvas id="regionalChart"></canvas>
+                    </div>
+                </div>
+                <div class="widget-card">
+                    <div class="widget-header">
+                        <div class="widget-title">Top High-Value Customers</div>
+                        <div class="widget-sub">Total Lifetime Spend</div>
                     </div>
                     <table>
                         <thead>
                             <tr>
-                                <th>Product SKU</th>
-                                <th>Category</th>
-                                <th>Stock</th>
-                                <th>Forecast 30D</th>
-                                <th>Status</th>
-                                <th>Action Recommendation</th>
+                                <th>Customer ID</th>
+                                <th>Orders</th>
+                                <th>Items</th>
+                                <th>Total Spend ($)</th>
                             </tr>
                         </thead>
-                        <tbody id="inventoryTable"></tbody>
+                        <tbody>
+                            {"".join([f"<tr><td><strong>{c['customer_id']}</strong></td><td>{c['total_orders']}</td><td>{c['total_items']}</td><td>${c['total_spend']:,.2f}</td></tr>" for c in top_10_custs])}
+                        </tbody>
                     </table>
                 </div>
-
             </div>
+        </div>
 
-            <!-- Right Panel: Balance Ring + Category Spent -->
-            <div class="right-panel">
-                <div class="widget-card" style="align-items: center; text-align: center;">
-                    
-                    <!-- Circular Donut Ring -->
-                    <div class="progress-circle-box" style="width: 170px; height: 170px;">
-                        <canvas id="donutRingChart"></canvas>
-                        <div style="position: absolute; text-align: center;">
-                            <div style="font-size: 1.8rem; font-weight: 800; color: var(--text-main);">{margin:.0f}%</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Profit Margin</div>
-                        </div>
-                    </div>
-
-                    <div class="balance-box">
-                        <div class="balance-amount">${tot_rev:,.2f}</div>
-                        <div class="balance-label">Total Generated Revenue</div>
-                    </div>
-
-                    <hr style="width: 100%; border: none; border-top: 1px solid var(--border-color); margin: 1rem 0;">
-
-                    <!-- Category Spent Breakdown List -->
-                    <div style="width: 100%;">
-                        <div style="text-align: left; font-size: 0.95rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-main);">Category Revenue</div>
-                        <div class="cat-list">
-                            <div class="cat-row">
-                                <div class="cat-left"><div class="cat-dot" style="background: #9d4edd;"></div> Furniture</div>
-                                <div>${cat_sales[0]:,.2f}</div>
-                            </div>
-                            <div class="cat-row">
-                                <div class="cat-left"><div class="cat-dot" style="background: #3b82f6;"></div> Electronics</div>
-                                <div>${cat_sales[1]:,.2f}</div>
-                            </div>
-                            <div class="cat-row">
-                                <div class="cat-left"><div class="cat-dot" style="background: #ff6b35;"></div> Home & Kitchen</div>
-                                <div>${cat_sales[2]:,.2f}</div>
-                            </div>
-                            <div class="cat-row">
-                                <div class="cat-left"><div class="cat-dot" style="background: #10b981;"></div> Apparel</div>
-                                <div>${cat_sales[3]:,.2f}</div>
-                            </div>
-                            <div class="cat-row">
-                                <div class="cat-left"><div class="cat-dot" style="background: #f72585;"></div> Office Supplies</div>
-                                <div>${cat_sales[4]:,.2f}</div>
-                            </div>
-                        </div>
-                    </div>
-
+        <!-- PAGE 4: DEMAND FORECASTING & INVENTORY -->
+        <div id="view-forecast" class="view-content">
+            <div class="widget-card" style="margin-bottom: 2rem;">
+                <div class="widget-header">
+                    <div class="widget-title">30-Day Time-Series Demand Forecast (Linear Regression Champion Model)</div>
+                    <div class="widget-sub">Historical Demand + Predicted Demand & 95% Confidence Bounds</div>
+                </div>
+                <div style="height: 250px;">
+                    <canvas id="forecastChart"></canvas>
                 </div>
             </div>
 
+            <div class="widget-card">
+                <div class="widget-header">
+                    <div class="widget-title">Inventory Recommendation & Stockout Risk Engine</div>
+                    <div class="widget-sub">Actionable Prescriptive Insights</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product SKU</th>
+                            <th>Category</th>
+                            <th>Stock</th>
+                            <th>Forecast 30D</th>
+                            <th>Status</th>
+                            <th>Action Recommendation</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTable"></tbody>
+                </table>
+            </div>
         </div>
 
     </div>
 
     <script>
-        // Theme Toggle Handler
+        function switchView(viewId) {{
+            document.querySelectorAll('.view-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.view-pill').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById('view-' + viewId).classList.add('active');
+            
+            // Highlight pill
+            const btnIdx = ['exec', 'products', 'customers', 'forecast'].indexOf(viewId);
+            if (btnIdx !== -1) {{
+                document.querySelectorAll('.view-pill')[btnIdx].classList.add('active');
+                document.querySelectorAll('.nav-item')[btnIdx].classList.add('active');
+            }}
+        }}
+
         function toggleTheme() {{
             const html = document.documentElement;
             const btnText = document.getElementById('themeText');
@@ -412,7 +512,7 @@ def generate_designer_dashboard():
             }}
         }}
 
-        // Smooth Wave Activity Chart
+        // Monthly Wave Chart
         const actCtx = document.getElementById('activityChart').getContext('2d');
         const gradientPurple = actCtx.createLinearGradient(0, 0, 0, 180);
         gradientPurple.addColorStop(0, 'rgba(157, 78, 221, 0.4)');
@@ -422,48 +522,63 @@ def generate_designer_dashboard():
             type: 'line',
             data: {{
                 labels: {json.dumps(monthly_labels)},
-                datasets: [{{
-                    label: 'Revenue',
-                    data: {json.dumps(monthly_sales)},
-                    borderColor: '#9d4edd',
-                    borderWidth: 3,
-                    backgroundColor: gradientPurple,
-                    fill: true,
-                    tension: 0.45,
-                    pointRadius: 0
-                }}]
+                datasets: [{{ label: 'Revenue', data: {json.dumps(monthly_sales)}, borderColor: '#9d4edd', borderWidth: 3, backgroundColor: gradientPurple, fill: true, tension: 0.45, pointRadius: 0 }}]
             }},
             options: {{ responsive: true, maintainAspectRatio: false, plugins: {{ legend: {{ display: false }} }}, scales: {{ x: {{ display: false }}, y: {{ display: false }} }} }}
         }});
 
-        // Payments Bar Chart with Orange Highlight
-        const payCtx = document.getElementById('paymentsChart').getContext('2d');
-        new Chart(payCtx, {{
+        // Payments Bar Chart
+        new Chart(document.getElementById('paymentsChart').getContext('2d'), {{
             type: 'bar',
             data: {{
                 labels: {json.dumps(cat_labels)},
-                datasets: [{{
-                    data: {json.dumps(cat_sales)},
-                    backgroundColor: ['#ff6b35', '#3b82f6', '#9d4edd', '#10b981', '#f72585'],
-                    borderRadius: 8
-                }}]
+                datasets: [{{ data: {json.dumps(cat_sales)}, backgroundColor: ['#ff6b35', '#3b82f6', '#9d4edd', '#10b981', '#f72585'], borderRadius: 8 }}]
             }},
             options: {{ responsive: true, maintainAspectRatio: false, plugins: {{ legend: {{ display: false }} }}, scales: {{ x: {{ display: false }}, y: {{ display: false }} }} }}
         }});
 
         // Donut Ring Chart
-        const ringCtx = document.getElementById('donutRingChart').getContext('2d');
-        new Chart(ringCtx, {{
+        new Chart(document.getElementById('donutRingChart').getContext('2d'), {{
             type: 'doughnut',
             data: {{
-                datasets: [{{
-                    data: [{margin:.0f}, {100 - margin:.0f}],
-                    backgroundColor: ['#9d4edd', 'rgba(255,255,255,0.08)'],
-                    borderWidth: 0,
-                    cutout: '82%'
-                }}]
+                datasets: [{{ data: [{margin:.0f}, {100 - margin:.0f}], backgroundColor: ['#9d4edd', 'rgba(255,255,255,0.08)'], borderWidth: 0, cutout: '82%' }}]
             }},
             options: {{ responsive: true, maintainAspectRatio: false, plugins: {{ legend: {{ display: false }}, tooltip: {{ enabled: false }} }} }}
+        }});
+
+        // Top Products Bar Chart
+        new Chart(document.getElementById('topProdChart').getContext('2d'), {{
+            type: 'bar',
+            data: {{
+                labels: {json.dumps([p["product_name"] for p in top_10_prods])},
+                datasets: [{{ label: 'Revenue ($)', data: {json.dumps([p["total_revenue"] for p in top_10_prods])}, backgroundColor: '#ff6b35', borderRadius: 8 }}]
+            }},
+            options: {{ indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: {{ legend: {{ display: false }} }} }}
+        }});
+
+        // Regional Chart
+        new Chart(document.getElementById('regionalChart').getContext('2d'), {{
+            type: 'doughnut',
+            data: {{
+                labels: {json.dumps(reg_labels)},
+                datasets: [{{ data: {json.dumps(reg_sales)}, backgroundColor: ['#3b82f6', '#10b981', '#9d4edd', '#ff6b35', '#f72585'] }}]
+            }},
+            options: {{ responsive: true, maintainAspectRatio: false }}
+        }});
+
+        // Forecast Chart
+        new Chart(document.getElementById('forecastChart').getContext('2d'), {{
+            type: 'line',
+            data: {{
+                labels: {json.dumps(fcst_dates)},
+                datasets: [
+                    {{ label: 'Actual Demand', data: {json.dumps(actual_demand)}, borderColor: '#3b82f6', backgroundColor: '#3b82f6', pointRadius: 2 }},
+                    {{ label: 'Predicted Demand (30D)', data: {json.dumps(pred_demand)}, borderColor: '#10b981', borderDash: [5, 5], backgroundColor: '#10b981', pointRadius: 3 }},
+                    {{ label: 'Upper Bound (95%)', data: {json.dumps(upper_bound)}, borderColor: 'rgba(251, 191, 36, 0.4)', fill: '+1', backgroundColor: 'rgba(251, 191, 36, 0.1)', pointRadius: 0 }},
+                    {{ label: 'Lower Bound (95%)', data: {json.dumps(lower_bound)}, borderColor: 'rgba(251, 191, 36, 0.4)', fill: false, pointRadius: 0 }}
+                ]
+            }},
+            options: {{ responsive: true, maintainAspectRatio: false }}
         }});
 
         // Populate Inventory Table
@@ -493,7 +608,7 @@ def generate_designer_dashboard():
 
     with open("dashboard.html", "w", encoding="utf-8") as f:
         f.write(html_content)
-    print("Successfully built Purser-styled Light/Dark theme Dashboard at D:\\E-commerce\\dashboard.html")
+    print("Successfully built 4-view Purse Dashboard at D:\\E-commerce\\dashboard.html")
 
 if __name__ == "__main__":
-    generate_designer_dashboard()
+    generate_complete_purse_dashboard()
