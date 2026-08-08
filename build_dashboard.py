@@ -1,7 +1,6 @@
 """
 Builds an ultra-premium, 4-view interactive web BI dashboard (dashboard.html) matching the
-reference UI design with official project branding:
-"E-Commerce Sales Intelligence & Demand Forecasting Platform".
+reference UI design with official project branding: "Ecom Predict".
 """
 
 import json
@@ -82,7 +81,7 @@ def generate_complete_dashboard():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Commerce Sales Intelligence & Demand Forecasting Platform</title>
+    <title>Ecom Predict - Sales Intelligence & Demand Forecasting Platform</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -123,7 +122,7 @@ def generate_complete_dashboard():
 
         /* Left Navigation Bar */
         .sidebar {{ width: 80px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; padding: 2rem 0; gap: 2rem; z-index: 10; }}
-        .sidebar-logo {{ width: 44px; height: 44px; background: var(--primary-orange); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.4rem; color: #fff; box-shadow: 0 0 20px rgba(255, 107, 53, 0.4); }}
+        .sidebar-logo {{ width: 44px; height: 44px; background: var(--primary-orange); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; color: #fff; box-shadow: 0 0 20px rgba(255, 107, 53, 0.4); }}
         .nav-icons {{ display: flex; flex-direction: column; gap: 1.5rem; width: 100%; align-items: center; margin-top: 1rem; }}
         .nav-item {{ width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; transition: all 0.2s ease; font-size: 1.2rem; }}
         .nav-item:hover, .nav-item.active {{ background: rgba(255, 107, 53, 0.15); color: var(--primary-orange); }}
@@ -133,7 +132,7 @@ def generate_complete_dashboard():
 
         /* Header / Top Bar */
         .top-header {{ display: flex; justify-content: space-between; align-items: center; width: 100%; }}
-        .brand-title {{ font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; color: var(--text-main); }}
+        .brand-title {{ font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; color: var(--text-main); }}
         
         .nav-views {{ display: flex; background: var(--card-bg); border: 1px solid var(--border-color); padding: 4px; border-radius: 30px; gap: 4px; box-shadow: var(--shadow-card); }}
         .view-pill {{ padding: 8px 20px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); cursor: pointer; border: none; background: transparent; transition: all 0.2s ease; }}
@@ -217,7 +216,7 @@ def generate_complete_dashboard():
 
     <!-- Left Sidebar Navigation -->
     <div class="sidebar">
-        <div class="sidebar-logo">E</div>
+        <div class="sidebar-logo">EP</div>
         <div class="nav-icons">
             <div class="nav-item active" onclick="switchView('exec')" title="Executive Overview">⚡</div>
             <div class="nav-item" onclick="switchView('products')" title="Sales & Products">📦</div>
@@ -231,7 +230,7 @@ def generate_complete_dashboard():
         
         <!-- Header Bar -->
         <div class="top-header">
-            <div class="brand-title">E-Commerce Sales Intelligence & Demand Forecasting Platform</div>
+            <div class="brand-title">Ecom Predict</div>
             
             <!-- Views Navigation Pills -->
             <div class="nav-views">
@@ -260,7 +259,7 @@ def generate_complete_dashboard():
                         <!-- Glassmorphic Card -->
                         <div class="glass-card">
                             <div class="card-top">
-                                <span style="font-weight: 700; font-size: 1rem;">E-Commerce Executive</span>
+                                <span style="font-weight: 700; font-size: 1rem;">Ecom Predict Executive</span>
                                 <div class="card-chip"></div>
                             </div>
                             <div class="card-number">•••• •••• 8702</div>
@@ -608,7 +607,7 @@ def generate_complete_dashboard():
 
     with open("dashboard.html", "w", encoding="utf-8") as f:
         f.write(html_content)
-    print("Successfully built updated Dashboard at D:\\E-commerce\\dashboard.html")
+    print("Successfully built Ecom Predict Dashboard at D:\\E-commerce\\dashboard.html")
 
 if __name__ == "__main__":
     generate_complete_dashboard()

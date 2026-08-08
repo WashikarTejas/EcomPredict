@@ -1,4 +1,4 @@
-# E-Commerce Sales Intelligence & Demand Forecasting Platform
+# Ecom Predict - E-Commerce Sales Intelligence & Demand Forecasting Platform
 
 An end-to-end Data Analytics, Data Science, and Business Intelligence platform built with **Python**, **Pandas**, **SQL (SQLAlchemy / SQLite / PostgreSQL)**, **Scikit-learn**, and **Power BI Desktop**.
 
